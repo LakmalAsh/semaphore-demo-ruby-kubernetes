@@ -6,16 +6,18 @@ agent:
     os_image: ubuntu1804
 blocks:
   - name: 'Block #1'
+    dependencies:
+      - 'Block #1'
     task:
       jobs:
         - name: 'Job #1'
           commands:
-            - checkout
-  - name: new
-    task:
-      jobs:
-        - name: 'Job #1'
-          commands:
+            - 'version: v1.0'
+            - 'name: CI'
+            - 'agent:'
+            - '  machine:'
+            - '    type: e1-standard-2'
+            - '    os_image: ubuntu1804'
             - '- name: Install dependencies'
             - '  task:'
             - '    jobs:'
@@ -25,11 +27,6 @@ blocks:
             - '          - cache restore gems-$SEMAPHORE_GIT_BRANCH-$(checksum Gemfile.lock),gems-$SEMAPHORE_GIT_BRANCH,gems-master'
             - '          - bundle install --deployment --path .bundle'
             - '          - cache store gems-$SEMAPHORE_GIT_BRANCH-$(checksum Gemfile.lock) .bundle'
-  - name: 'bulder '
-    task:
-      jobs:
-        - name: 'Job #1'
-          commands:
             - 'blocks:'
             - '  - name: Install dependencies'
             - '    task:'
@@ -40,7 +37,9 @@ blocks:
             - '            - cache restore gems-$SEMAPHORE_GIT_BRANCH-$(checksum Gemfile.lock),gems-$SEMAPHORE_GIT_BRANCH,gems-master'
             - '            - bundle install --deployment --path .bundle'
             - '            - cache store gems-$SEMAPHORE_GIT_BRANCH-$(checksum Gemfile.lock) .bundle'
-  - name: 'Block #4'
+  - name: Tests
+    dependencies:
+      - 'Block #1'
     task:
       jobs:
         - name: 'Job #1'
@@ -55,7 +54,7 @@ blocks:
             - '          - bundle install --deployment --path .bundle'
             - '          - bundle exec rspec'
 promotions:
-  - name: Promotion 1
-    pipeline_file: pipeline_2.yml
-    auto_promote:
-      when: branch = 'master' AND result = 'passed'
+  - name: Dockerize
+    pipeline_file: docker-build.yml
+    auto_promote_on:
+      - result: passed
